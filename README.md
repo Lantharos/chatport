@@ -1,5 +1,8 @@
 # chatport
 
+[![npm version](https://img.shields.io/npm/v/chatport.svg)](https://www.npmjs.com/package/chatport)
+[![Node](https://img.shields.io/node/v/chatport.svg)](https://www.npmjs.com/package/chatport)
+
 > Move, copy, and convert chat history between AI coding CLIs.
 
 `chatport` is a single CLI that reads chat sessions from one AI client and writes them to another — or to portable formats (Markdown, JSON, Claude-flavored) you can paste anywhere.
@@ -22,17 +25,27 @@ codex  ⇄  opencode  ⇄  grok  ⇄  t3  ⇄  synara
 
 ## Install
 
-```bash
-git clone https://github.com/you/chatport
-cd chatport
-npm install
-npm link              # makes `chatport` available globally
-```
-
-Or once published:
+Requires Node.js 20+.
 
 ```bash
 npm install -g chatport
+# or
+pnpm add -g chatport
+# or
+yarn global add chatport
+# or
+bun add -g chatport
+```
+
+Then run `chatport --help` to get started.
+
+### From source
+
+```bash
+git clone https://github.com/Lantharos/chatport
+cd chatport
+npm install
+npm link              # makes `chatport` available globally
 ```
 
 ## Quick start
