@@ -1,6 +1,7 @@
 # chatport
 
 [![npm version](https://img.shields.io/npm/v/chatport.svg)](https://www.npmjs.com/package/chatport)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![Node](https://img.shields.io/node/v/chatport.svg)](https://www.npmjs.com/package/chatport)
 
 > Move, copy, and convert chat history between AI coding CLIs.
