@@ -4,6 +4,7 @@ export const MODES = {
   GROK: "grok",
   OPENCODE: "opencode",
   T3: "t3",
+  SYNARA: "synara",
 };
 
 export function detectCompaction(session) {
@@ -15,6 +16,7 @@ export function detectCompaction(session) {
   if (session.source === "grok") return detectGrok(session);
   if (session.source === "opencode") return detectOpenCode(session);
   if (session.source === "t3") return detectT3(session);
+  if (session.source === "synara") return detectSynara(session);
   return session;
 }
 
@@ -94,6 +96,17 @@ function detectT3(session) {
   return session;
 }
 
+function detectSynara(session) {
+  const meta = session.metadata?.synara || {};
+  if (!meta.compacted) return session;
+  session.compaction = {
+    mode: MODES.SYNARA,
+    cutIndex: session.messages.length,
+    detectedAt: new Date().toISOString(),
+  };
+  return session;
+}
+
 export function applyCompaction(session, { keep = "compacted" } = {}) {
   if (keep === "full" || !session.compaction || session.compaction.mode === MODES.NONE) {
     return session;
@@ -152,7 +165,7 @@ function buildSummaryMessages(session) {
       },
     ];
   }
-  if (c.mode === MODES.OPENCODE || c.mode === MODES.T3) {
+  if (c.mode === MODES.OPENCODE || c.mode === MODES.T3 || c.mode === MODES.SYNARA) {
     const stats = [];
     if (c.summaryAdditions != null) stats.push(`+${c.summaryAdditions} lines`);
     if (c.summaryDeletions != null) stats.push(`-${c.summaryDeletions} lines`);

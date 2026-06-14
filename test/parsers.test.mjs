@@ -10,6 +10,7 @@ const HAS_DATA = {
   opencode: fsSync.existsSync(path.join(os.homedir(), ".local", "share", "opencode", "opencode.db")),
   grok: fsSync.existsSync(path.join(os.homedir(), ".grok", "sessions")),
   t3: fsSync.existsSync(path.join(os.homedir(), ".t3", "userdata", "state.sqlite")),
+  synara: fsSync.existsSync(path.join(os.homedir(), ".synara", "userdata", "state.sqlite")),
 };
 
 test("codex parser handles rollout files", { skip: !HAS_DATA.codex }, async () => {
@@ -55,4 +56,14 @@ test("t3 parser reads state.sqlite", { skip: !HAS_DATA.t3 }, async () => {
   assert.ok(threads.length > 0);
   const ucf = readThread(dbPath, threads[0].id);
   assert.equal(ucf.source, "t3");
+});
+
+test("synara parser reads state.sqlite", { skip: !HAS_DATA.synara }, async () => {
+  const { listThreads, readThread } = await import("../src/parsers/synara.mjs");
+  const dbPath = path.join(os.homedir(), ".synara", "userdata", "state.sqlite");
+  const threads = listThreads(dbPath);
+  assert.ok(threads.length > 0);
+  const ucf = readThread(dbPath, threads[0].id);
+  assert.equal(ucf.source, "synara");
+  assert.ok(ucf.metadata.synara);
 });

@@ -30,6 +30,7 @@ PORT TARGETS
   opencode    OpenCode SQLite (requires --force for live DB)
   grok        Grok CLI session directories
   t3          T3 Code SQLite (requires --force for live DB)
+  synara      Synara SQLite (requires --force for live DB)
 
 Use --reasoning to include assistant reasoning blocks in markdown export.
 `);

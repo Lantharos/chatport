@@ -2,10 +2,11 @@ import * as codex from "./parsers/codex.mjs";
 import * as opencode from "./parsers/opencode.mjs";
 import * as grok from "./parsers/grok.mjs";
 import * as t3 from "./parsers/t3.mjs";
+import * as synara from "./parsers/synara.mjs";
 
-export const PARSERS = { codex, opencode, grok, t3 };
+export const PARSERS = { codex, opencode, grok, t3, synara };
 
-export const TARGETS = ["codex", "opencode", "grok", "t3", "markdown", "json", "claude"];
+export const TARGETS = ["codex", "opencode", "grok", "t3", "synara", "markdown", "json", "claude"];
 
 export function getParser(source) {
   const p = PARSERS[source];
@@ -20,6 +21,7 @@ export async function listSessionsFor(source, opts = {}) {
   if (source === "opencode") return p.listSessions(root);
   if (source === "grok") return p.listSessions(root);
   if (source === "t3") return p.listThreads(root);
+  if (source === "synara") return p.listThreads(root);
   throw new Error(`listSessions not supported for ${source}`);
 }
 
@@ -51,5 +53,6 @@ export async function readSessionFor(source, opts) {
     return p.readSession(dirPath);
   }
   if (source === "t3") return p.readThread(path, id);
+  if (source === "synara") return p.readThread(path, id);
   throw new Error(`readSession not supported for ${source}`);
 }

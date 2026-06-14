@@ -10,12 +10,13 @@ import * as codexInject from "../injectors/codex.mjs";
 import * as opencodeInject from "../injectors/opencode.mjs";
 import * as grokInject from "../injectors/grok.mjs";
 import * as t3Inject from "../injectors/t3.mjs";
+import * as synaraInject from "../injectors/synara.mjs";
 import { toMarkdown } from "../injectors/markdown.mjs";
 import { toClaudeMarkdown } from "../injectors/claude.mjs";
 import { writeJson } from "../injectors/json.mjs";
 import { deriveTitle, projectDisplay } from "../lib/title.mjs";
 
-const NATIVE_TARGETS = ["codex", "opencode", "grok", "t3"];
+const NATIVE_TARGETS = ["codex", "opencode", "grok", "t3", "synara"];
 
 export async function portCommand(opts) {
   const { from, to, session, fromPath, toPath, out, force, copy: isCopy, includeReasoning, dryRun, fullHistory, lastTurns, fromTurn, summaryOnly } = opts;
@@ -56,7 +57,7 @@ export async function portCommand(opts) {
       log.dim(`  · detected ${c.count || 1} codex compaction(s); using last replacement_history (${c.replacement?.length || 0} items) + ${c.keptCount || 0} recent`);
     } else if (c.mode === "grok") {
       log.dim(`  · grok summary: ${c.summaryTurns} earlier turn(s) summarized + ${c.keptCount || 0} recent`);
-    } else if (c.mode === "opencode" || c.mode === "t3") {
+    } else if (c.mode === "opencode" || c.mode === "t3" || c.mode === "synara") {
       log.dim(`  · ${c.mode} compacted session detected; using placeholder summary + ${c.keptCount || 0} recent`);
     }
   }
@@ -124,6 +125,18 @@ export async function portCommand(opts) {
       log.warn(`T3 Code is currently running. Imported threads appear after you reload or relaunch.`);
     }
     const r = await withSpinner(`Writing to T3 database…`, () => t3Inject.writeT3(srcSession, target));
+    result = { type: "thread", path: target, id: r.threadId, projectId: r.projectId, title: r.title };
+  } else if (to === "synara") {
+    const target = out || resolvePath("synara");
+    if (!force) {
+      log.warn(`Writing to live Synara database. Pass --force to confirm.`);
+      log.dim(`  target: ${target}`);
+      fatal("Aborted. Re-run with --force to write to the live DB.");
+    }
+    if (await detectRunning("synara")) {
+      log.warn(`Synara is currently running. Imported threads appear after you reload or relaunch.`);
+    }
+    const r = await withSpinner(`Writing to Synara database…`, () => synaraInject.writeSynara(srcSession, target));
     result = { type: "thread", path: target, id: r.threadId, projectId: r.projectId, title: r.title };
   }
 

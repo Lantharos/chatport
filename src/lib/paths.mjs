@@ -27,6 +27,13 @@ export const SOURCES = {
     ],
     detect: () => exists(`${process.env.HOME}/.t3/userdata/state.sqlite`),
   },
+  synara: {
+    label: "Synara",
+    defaultPaths: () => [
+      `${process.env.HOME}/.synara/userdata/state.sqlite`,
+    ],
+    detect: () => exists(`${process.env.HOME}/.synara/userdata/state.sqlite`),
+  },
 };
 
 import { existsSync as exists } from "node:fs";

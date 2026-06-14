@@ -3,6 +3,7 @@ import net from "node:net";
 const COMMON_PORTS = {
   opencode: [34515, 38045, 4096, 34845],
   t3: [3773],
+  synara: [3773],
 };
 
 function isPortListening(port) {

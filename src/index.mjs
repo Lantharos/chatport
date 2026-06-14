@@ -25,7 +25,7 @@ program
 
 program
   .command("list <source>")
-  .description("List sessions available from a source (codex, opencode, grok, t3)")
+  .description("List sessions available from a source (codex, opencode, grok, t3, synara)")
   .option("-p, --path <path>", "Override the default data path")
   .option("--from-path <path>", "Alias for --path")
   .option("--project <name>", "Filter by project folder name")
@@ -57,14 +57,14 @@ program
 program
   .command("port")
   .description("Port a session from one client to another")
-  .requiredOption("-f, --from <source>", "Source: codex, opencode, grok, t3")
-  .requiredOption("-t, --to <target>", "Target: codex, opencode, grok, t3, markdown, json, claude")
+  .requiredOption("-f, --from <source>", "Source: codex, opencode, grok, t3, synara")
+  .requiredOption("-t, --to <target>", "Target: codex, opencode, grok, t3, synara, markdown, json, claude")
   .requiredOption("-s, --session <id>", "Session ID or path")
   .option("--from-path <path>", "Override source data path")
   .option("--to-path <path>", "Override target data path")
   .option("-o, --out <path>", "Output file/directory")
   .option("--copy", "Copy mode (don't move original)")
-  .option("--force", "Force write to live database (opencode, t3)")
+  .option("--force", "Force write to live database (opencode, t3, synara)")
   .option("--reasoning", "Include assistant reasoning blocks in markdown export")
   .option("--dry-run", "Show what would be ported without writing")
   .option("--full-history", "Skip compaction: include all messages in native ports")
@@ -160,7 +160,7 @@ async function interactive() {
       ...(avail.filter((a) => a.id !== source).map((a) => ({ name: `${a.id} — native format (writes to ${a.label} store)`, value: a.id }))),
     ],
   });
-  const isNative = ["codex", "opencode", "grok", "t3"].includes(target);
+  const isNative = ["codex", "opencode", "grok", "t3", "synara"].includes(target);
   let force = false;
   if (isNative) {
     force = await confirm({
