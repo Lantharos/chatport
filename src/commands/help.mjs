@@ -31,6 +31,7 @@ PORT TARGETS
   grok        Grok CLI session directories
   t3          T3 Code SQLite (requires --force for live DB)
   synara      Synara SQLite (requires --force for live DB)
+  claudecode  Claude Code JSONL in ~/.claude/projects (best-effort; specify --out)
 
 Use --reasoning to include assistant reasoning blocks in markdown export.
 `);

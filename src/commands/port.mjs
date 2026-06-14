@@ -11,12 +11,13 @@ import * as opencodeInject from "../injectors/opencode.mjs";
 import * as grokInject from "../injectors/grok.mjs";
 import * as t3Inject from "../injectors/t3.mjs";
 import * as synaraInject from "../injectors/synara.mjs";
+import * as claudecodeInject from "../injectors/claudecode.mjs";
 import { toMarkdown } from "../injectors/markdown.mjs";
 import { toClaudeMarkdown } from "../injectors/claude.mjs";
 import { writeJson } from "../injectors/json.mjs";
 import { deriveTitle, projectDisplay } from "../lib/title.mjs";
 
-const NATIVE_TARGETS = ["codex", "opencode", "grok", "t3", "synara"];
+const NATIVE_TARGETS = ["codex", "opencode", "grok", "t3", "synara", "claudecode"];
 
 export async function portCommand(opts) {
   const { from, to, session, fromPath, toPath, out, force, copy: isCopy, includeReasoning, dryRun, fullHistory, lastTurns, fromTurn, summaryOnly } = opts;
@@ -138,6 +139,13 @@ export async function portCommand(opts) {
     }
     const r = await withSpinner(`Writing to Synara database…`, () => synaraInject.writeSynara(srcSession, target));
     result = { type: "thread", path: target, id: r.threadId, projectId: r.projectId, title: r.title };
+  } else if (to === "claudecode") {
+    const outFile = out || path.join(process.cwd(), `${slugify(title || srcSession.sessionId)}.claudecode.jsonl`);
+    if (isCopy && !force && await exists(outFile)) fatal(`Output exists: ${outFile} (use --force to overwrite)`);
+    const written = await withSpinner(`Writing Claude Code JSONL to ${path.basename(outFile)}…`, () =>
+      claudecodeInject.writeClaudeCode(srcSession, outFile)
+    );
+    result = { type: "file", path: written };
   }
 
   log.ok(`Done.`);

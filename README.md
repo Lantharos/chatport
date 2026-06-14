@@ -9,20 +9,21 @@
 `chatport` is a single CLI that reads chat sessions from one AI client and writes them to another — or to portable formats (Markdown, JSON, Claude-flavored) you can paste anywhere.
 
 ```
-codex  ⇄  opencode  ⇄  grok  ⇄  t3  ⇄  synara
-  ↓       ↓           ↓      ↓      ↓
-       markdown / json / claude
+codex  ⇄  opencode  ⇄  grok  ⇄  t3  ⇄  synara  ⇄  claudecode
+  ↓       ↓           ↓      ↓      ↓             ↓
+                markdown / json / claude
 ```
 
 ## Supported sources
 
-| Source   | Where it stores data                          |
-| -------- | --------------------------------------------- |
-| `codex`  | `~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl` |
-| `opencode` | `~/.local/share/opencode/opencode.db` (SQLite) |
-| `grok`   | `~/.grok/sessions/<encoded-cwd>/<uuid>/`      |
-| `t3`     | `~/.t3/userdata/state.sqlite` (SQLite)        |
-| `synara` | `~/.synara/userdata/state.sqlite` (SQLite)    |
+| Source      | Where it stores data                          |
+| ----------- | --------------------------------------------- |
+| `codex`     | `~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl` |
+| `opencode`  | `~/.local/share/opencode/opencode.db` (SQLite) |
+| `grok`      | `~/.grok/sessions/<encoded-cwd>/<uuid>/`      |
+| `t3`        | `~/.t3/userdata/state.sqlite` (SQLite)        |
+| `synara`    | `~/.synara/userdata/state.sqlite` (SQLite)    |
+| `claudecode`| `~/.claude/projects/<encoded-cwd>/*.jsonl`    |
 
 ## Install
 
@@ -74,6 +75,12 @@ chatport port -f codex -t t3 -s 019ec2ba-...      --force
 # Port a Codex session into Synara (live database)
 chatport port -f codex -t synara -s 019ec2ba-...  --force
 
+# Export a Claude Code session to a Claude-flavored markdown file
+chatport port -f claudecode -t claude -s <session-id-or-path> -o ./session.claude.md
+
+# Port a Codex session into a Claude Code JSONL (specify --out)
+chatport port -f codex -t claudecode -s 019ec2ba-... --out ./imported.jsonl
+
 # Interactive picker — pick source / session / target with arrows
 chatport ui
 ```
@@ -92,8 +99,8 @@ chatport ui
 ## `port` flags
 
 ```
--f, --from <source>     codex, opencode, grok, t3, synara
--t, --to <target>       codex, opencode, grok, t3, synara, markdown, json, claude
+-f, --from <source>     codex, opencode, grok, t3, synara, claudecode
+-t, --to <target>       codex, opencode, grok, t3, synara, claudecode, markdown, json, claude
 -s, --session <id>      Session ID (from `list`)
     --from-path <path>  Override source data path
     --to-path   <path>  Override target data path
@@ -115,12 +122,12 @@ Flavored for Anthropic Claude — uses `<user>`, `<assistant>`, `<system>`, and 
 ### `json` (UCF)
 The native `chatport` format. Round-trip safe. Use this if you want lossless conversion or are building a pipeline.
 
-### `codex` / `opencode` / `grok` / `t3` / `synara`
+### `codex` / `opencode` / `grok` / `t3` / `synara` / `claudecode`
 Native formats written to the target client's storage layout. Useful for:
 - Migrating a conversation from one tool to another
 - Resuming a long session in a different client
 
-These require the **target** to be installed. Writing to a **live database** (OpenCode, T3, Synara) requires `--force`.
+These require the **target** to be installed. Writing to a **live database** (OpenCode, T3, Synara) requires `--force`. Claude Code writes to an explicit `--out` path; chatport will not modify your live `~/.claude/projects/` directory.
 
 ## How it works
 
@@ -130,7 +137,8 @@ These require the **target** to be installed. Writing to a **live database** (Op
 │ opencode.db│ ──────────▶ │ UCF (UCF v1) │ ──────────▶ │ grok dirs  │
 │ grok dirs  │ ──────────▶ │              │ ──────────▶ │ t3 sqlite  │
 │ t3 sqlite  │ ──────────▶ │              │ ──────────▶ │ synara.sqlite│
-│ synara db  │ ──────────▶ │              │ ──────────▶ │ *.md / *.json │
+│ synara db  │ ──────────▶ │              │ ──────────▶ │ claudecode.jsonl│
+│ claudecode │ ──────────▶ │              │ ──────────▶ │ *.md / *.json │
 └────────────┘             └──────────────┘             └────────────┘
 ```
 
@@ -186,6 +194,7 @@ Derived title: `Create a Rust project using wgpu and winit.`
 - **T3 Code messages** are stored as text in `projection_thread_messages`, with tool calls in `projection_thread_activities`. Chatport merges both.
 - **Synara** uses the same `projection_*` tables as T3 Code but evolved the schema: `projection_threads.model` was replaced by `model_selection_json` (canonical `{provider, model}`), and many new columns were added across migrations 16–42 (e.g. `runtime_mode`, `interaction_mode`, `env_mode`, `archived_at`, `parent_thread_id`, `is_pinned`). The Synara parser/injector introspects the schema with `pragma_table_info` and only touches columns that actually exist, so it works on both freshly-installed Synara DBs and older imports.
 - **OpenCode parts** support `text`, `reasoning`, `file`, and `tool`. Custom step types are skipped.
+- **Claude Code** support is **best-effort**. The reader walks `~/.claude/projects/<encoded-cwd>/*.jsonl` and handles the full envelope set: `user`, `assistant`, `custom-title`, `agent-name`, `last-prompt`, `permission-mode`, `system`, `progress`, and `file-history-snapshot` / `queue-operation` / `attachment` (counted in `metadata.claudecode.skipped`). Content blocks: `text`, `thinking`, `tool_use`, and `tool_result` — including tool results externalized to `<session-id>/tool-results/<id>.json` (inlined automatically and tagged `externalized: true`). Subagent transcripts in `<session-id>/subagents/agent-<id>.jsonl` are merged in and tagged with `metadata.subagent: true` and `metadata.agentId`. Streaming assistant chunks (same `requestId`/`messageId` across multiple lines) are collapsed to a single message — only the final chunk (the one with `stop_reason` set, or the last seen) is kept. The writer emits the same envelope types but **does not write to a live `~/.claude/projects/` directory** — pass `--out <file>` to control where the JSONL lands. The schema may still evolve; please open an issue if a real session fails to parse, ideally with a redacted sample of the JSONL.
 
 ## Spinners & UX
 

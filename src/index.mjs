@@ -16,7 +16,7 @@ const program = new Command();
 program
   .name("chatport")
   .description("Move, copy, and convert chat history between AI CLI clients")
-  .version("0.1.0");
+  .version("0.2.0");
 
 program
   .command("sources")
@@ -25,7 +25,7 @@ program
 
 program
   .command("list <source>")
-  .description("List sessions available from a source (codex, opencode, grok, t3, synara)")
+  .description("List sessions available from a source (codex, opencode, grok, t3, synara, claudecode)")
   .option("-p, --path <path>", "Override the default data path")
   .option("--from-path <path>", "Alias for --path")
   .option("--project <name>", "Filter by project folder name")
@@ -57,8 +57,8 @@ program
 program
   .command("port")
   .description("Port a session from one client to another")
-  .requiredOption("-f, --from <source>", "Source: codex, opencode, grok, t3, synara")
-  .requiredOption("-t, --to <target>", "Target: codex, opencode, grok, t3, synara, markdown, json, claude")
+  .requiredOption("-f, --from <source>", "Source: codex, opencode, grok, t3, synara, claudecode")
+  .requiredOption("-t, --to <target>", "Target: codex, opencode, grok, t3, synara, claudecode, markdown, json, claude")
   .requiredOption("-s, --session <id>", "Session ID or path")
   .option("--from-path <path>", "Override source data path")
   .option("--to-path <path>", "Override target data path")
@@ -160,7 +160,7 @@ async function interactive() {
       ...(avail.filter((a) => a.id !== source).map((a) => ({ name: `${a.id} — native format (writes to ${a.label} store)`, value: a.id }))),
     ],
   });
-  const isNative = ["codex", "opencode", "grok", "t3", "synara"].includes(target);
+  const isNative = ["codex", "opencode", "grok", "t3", "synara", "claudecode"].includes(target);
   let force = false;
   if (isNative) {
     force = await confirm({

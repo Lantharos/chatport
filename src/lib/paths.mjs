@@ -34,6 +34,13 @@ export const SOURCES = {
     ],
     detect: () => exists(`${process.env.HOME}/.synara/userdata/state.sqlite`),
   },
+  claudecode: {
+    label: "Claude Code",
+    defaultPaths: () => [
+      `${process.env.HOME}/.claude/projects`,
+    ],
+    detect: () => exists(`${process.env.HOME}/.claude/projects`),
+  },
 };
 
 import { existsSync as exists } from "node:fs";

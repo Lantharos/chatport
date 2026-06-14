@@ -3,10 +3,11 @@ import * as opencode from "./parsers/opencode.mjs";
 import * as grok from "./parsers/grok.mjs";
 import * as t3 from "./parsers/t3.mjs";
 import * as synara from "./parsers/synara.mjs";
+import * as claudecode from "./parsers/claudecode.mjs";
 
-export const PARSERS = { codex, opencode, grok, t3, synara };
+export const PARSERS = { codex, opencode, grok, t3, synara, claudecode };
 
-export const TARGETS = ["codex", "opencode", "grok", "t3", "synara", "markdown", "json", "claude"];
+export const TARGETS = ["codex", "opencode", "grok", "t3", "synara", "claudecode", "markdown", "json", "claude"];
 
 export function getParser(source) {
   const p = PARSERS[source];
@@ -22,6 +23,7 @@ export async function listSessionsFor(source, opts = {}) {
   if (source === "grok") return p.listSessions(root);
   if (source === "t3") return p.listThreads(root);
   if (source === "synara") return p.listThreads(root);
+  if (source === "claudecode") return p.listSessions(root);
   throw new Error(`listSessions not supported for ${source}`);
 }
 
@@ -54,5 +56,13 @@ export async function readSessionFor(source, opts) {
   }
   if (source === "t3") return p.readThread(path, id);
   if (source === "synara") return p.readThread(path, id);
+  if (source === "claudecode") {
+    let filePath = id;
+    if (!filePath?.endsWith(".jsonl")) {
+      const found = await findSessionById(source, path, id);
+      filePath = found.path;
+    }
+    return p.readSession(filePath);
+  }
   throw new Error(`readSession not supported for ${source}`);
 }
