@@ -89,14 +89,14 @@ export async function writeCodex(session, targetDir) {
             }),
           );
           wroteText = true;
-        } else if (b.type === "reasoning" && b.text) {
+        } else if (b.type === "reasoning" && (b.text || b.encrypted)) {
           lines.push(
             JSON.stringify({
               timestamp: ts,
               type: "response_item",
               payload: {
                 type: "reasoning",
-                summary: [{ type: "summary_text", text: b.text }],
+                summary: b.text ? [{ type: "summary_text", text: b.text }] : [],
                 encrypted_content: b.encrypted || null,
               },
             }),

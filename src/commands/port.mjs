@@ -116,25 +116,25 @@ export async function portCommand(opts) {
     const dir = await withSpinner(`Writing Grok session to ${target}…`, () => grokInject.writeGrok(srcSession, target));
     result = { type: "directory", path: dir };
   } else if (to === "t3") {
-    const target = out || resolvePath("t3");
+    const target = toPath || resolvePath("t3");
     if (!force) {
       log.warn(`Writing to live T3 Code database. Pass --force to confirm.`);
       log.dim(`  target: ${target}`);
       fatal("Aborted. Re-run with --force to write to the live DB.");
     }
-    if (await detectRunning("t3")) {
+    if (await detectRunning("t3") && !toPath) {
       log.warn(`T3 Code is currently running. Imported threads appear after you reload or relaunch.`);
     }
     const r = await withSpinner(`Writing to T3 database…`, () => t3Inject.writeT3(srcSession, target));
     result = { type: "thread", path: target, id: r.threadId, projectId: r.projectId, title: r.title };
   } else if (to === "synara") {
-    const target = out || resolvePath("synara");
+    const target = toPath || resolvePath("synara");
     if (!force) {
       log.warn(`Writing to live Synara database. Pass --force to confirm.`);
       log.dim(`  target: ${target}`);
       fatal("Aborted. Re-run with --force to write to the live DB.");
     }
-    if (await detectRunning("synara")) {
+    if (await detectRunning("synara") && !toPath) {
       log.warn(`Synara is currently running. Imported threads appear after you reload or relaunch.`);
     }
     const r = await withSpinner(`Writing to Synara database…`, () => synaraInject.writeSynara(srcSession, target));

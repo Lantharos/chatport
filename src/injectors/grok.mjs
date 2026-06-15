@@ -27,6 +27,8 @@ export async function writeGrok(session, targetRoot) {
 
   lines.push(JSON.stringify({ type: "system", content: sysText, created_at: now }));
 
+  const consumedToolMessages = new Set();
+
   for (const m of session.messages) {
     const ts = m.timestamp ? new Date(m.timestamp).toISOString() : now;
     if (m.role === "user") {
@@ -38,7 +40,8 @@ export async function writeGrok(session, targetRoot) {
       }));
     } else if (m.role === "assistant") {
       const reasoningBlock = m.blocks.find((b) => b.type === "reasoning");
-      const toolCalls = m.blocks.filter((b) => b.type === "tool_call").map((b) => ({
+      const toolCallBlocks = m.blocks.filter((b) => b.type === "tool_call");
+      const toolCalls = toolCallBlocks.map((b) => ({
         id: b.callId || `call-${Math.random().toString(36).slice(2)}`,
         name: b.tool,
         arguments: typeof b.args === "string" ? b.args : JSON.stringify(b.args || {}),
@@ -54,21 +57,35 @@ export async function writeGrok(session, targetRoot) {
         model_id: m.modelId || session.model || "grok-build",
         created_at: ts,
       }));
-      for (const tc of toolCalls) {
-        const toolMsg = session.messages.find(
-          (mm) => mm.role === "tool" && (mm.toolCallId === tc.id || mm.blocks.some((b) => b.type === "tool_result" && b.toolCallId === tc.id)),
-        );
-        if (toolMsg) {
-          const trBlock = toolMsg.blocks.find((b) => b.type === "tool_result");
+      for (let i = 0; i < toolCalls.length; i++) {
+        const tc = toolCalls[i];
+        const sourceBlock = toolCallBlocks[i];
+        let output = sourceBlock?.output;
+        let consumedKey = null;
+        if (output === undefined || output === null) {
+          const toolMsgIndex = session.messages.findIndex(
+            (mm) => mm.role === "tool" && !consumedToolMessages.has(mm) && (mm.toolCallId === tc.id || mm.blocks.some((b) => b.type === "tool_result" && b.toolCallId === tc.id)),
+          );
+          if (toolMsgIndex >= 0) {
+            consumedKey = toolMsgIndex;
+            const toolMsg = session.messages[toolMsgIndex];
+            const trBlock = toolMsg.blocks.find((b) => b.type === "tool_result");
+            output = toolMsg.text || trBlock?.text || "";
+          }
+        }
+        if (consumedKey !== null) consumedToolMessages.add(consumedKey);
+        if (output !== undefined && output !== null) {
           lines.push(JSON.stringify({
             type: "tool_result",
             tool_call_id: tc.id,
-            content: toolMsg.text || trBlock?.text || "",
+            content: typeof output === "string" ? output : JSON.stringify(output),
             created_at: ts,
           }));
         }
       }
     } else if (m.role === "tool") {
+      const msgIndex = session.messages.indexOf(m);
+      if (consumedToolMessages.has(msgIndex)) continue;
       const tr = m.blocks.find((b) => b.type === "tool_result");
       lines.push(JSON.stringify({
         type: "tool_result",

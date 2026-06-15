@@ -201,7 +201,7 @@ export async function readSession(filePath) {
         toolCallsByCallId.set(p.call_id, { block, messageIndex: session.messages.length });
         const msg = makeMessage({
           role: "assistant",
-          text: `[tool_call] ${p.name}`,
+          text: "",
           blocks: [block],
           timestamp: ts,
           toolCallId: p.call_id,
@@ -235,13 +235,14 @@ export async function readSession(filePath) {
 
       if (p.type === "reasoning") {
         const text = (p.summary || []).map((s) => s.text || "").join("\n") || (p.text || "");
+        const encrypted = p.encrypted_content || p.encrypted || null;
         session.messages.push(
           makeMessage({
             role: "assistant",
             text,
-            blocks: [makeBlock("reasoning", { text })],
+            blocks: [makeBlock("reasoning", { text, encrypted })],
             timestamp: ts,
-            metadata: { reasoning: true, encrypted: p.encrypted || null },
+            metadata: { reasoning: true, encrypted },
           }),
         );
         continue;
