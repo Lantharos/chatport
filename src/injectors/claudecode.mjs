@@ -83,6 +83,14 @@ export async function writeClaudeCode(session, outFile) {
       if (text) content.push({ type: "text", text });
       for (const b of m.blocks) {
         if (b.type === "reasoning" && b.text) content.push({ type: "thinking", thinking: b.text });
+        else if (b.type === "tool_call") {
+          content.push({
+            type: "tool_use",
+            id: b.callId || `toolu_${safeId()}`,
+            name: b.tool || "tool",
+            input: b.args || {},
+          });
+        }
       }
       if (content.length === 0) continue;
       const usage = m.metadata?.usage && typeof m.metadata.usage === "object" ? m.metadata.usage : undefined;
@@ -109,7 +117,7 @@ export async function writeClaudeCode(session, outFile) {
           cwd: session.cwd || undefined,
         }),
       );
-    } else if (m.role === "system") {
+    } else if (m.role === "system" || m.role === "developer") {
       const text = m.text || (m.blocks.find((b) => b.type === "text")?.text ?? "");
       lines.push(
         JSON.stringify({
@@ -118,6 +126,25 @@ export async function writeClaudeCode(session, outFile) {
           type: "user",
           isMeta: true,
           message: { role: "user", content: text },
+          uuid,
+          timestamp: ts(m.timestamp),
+          sessionId,
+        }),
+      );
+    } else if (m.role === "tool") {
+      const tr = m.blocks.find((b) => b.type === "tool_result");
+      const toolUseId = m.toolCallId || tr?.toolCallId || `toolu_${safeId()}`;
+      const resultText = m.text || tr?.text || "";
+      lines.push(
+        JSON.stringify({
+          parentUuid,
+          isSidechain: false,
+          type: "user",
+          message: {
+            role: "user",
+            content: [{ type: "tool_result", tool_use_id: toolUseId, content: resultText, is_error: false }],
+          },
+          isMeta: false,
           uuid,
           timestamp: ts(m.timestamp),
           sessionId,
