@@ -1,6 +1,6 @@
 {
   "name": "chatport",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Move, copy, and convert chat history between Codex, OpenCode, Grok, T3 Code and any other AI CLI client.",
   "type": "module",
   "main": "src/index.mjs",
